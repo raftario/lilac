@@ -1,5 +1,6 @@
 use lilac::Lilac;
-use std::{path::PathBuf, process};
+use rodio::{Sink, Source};
+use std::{path::PathBuf, process, thread};
 use structopt::StructOpt;
 
 trait ResultExt<T> {
@@ -25,6 +26,9 @@ enum Opt {
         /// File to play
         #[structopt(name = "FILE")]
         file: PathBuf,
+        /// Playback volume
+        #[structopt(short, long, name = "VOLUME", default_value = "1.0")]
+        volume: f32,
     },
     /// Transcodes a file to or from LILAC
     Transcode {
@@ -39,7 +43,7 @@ enum Opt {
 
 fn main() {
     match Opt::from_args() {
-        Opt::Play { file } => {
+        Opt::Play { file, volume } => {
             let lilac = Lilac::read_file(file).unwrap_or_exit(65);
             println!(
                 "Now playing {} by {} on {}",
@@ -47,7 +51,20 @@ fn main() {
                 lilac.artist(),
                 lilac.album(),
             );
-            lilac.play().unwrap_or_exit(69);
+
+            let device = rodio::default_output_device()
+                .ok_or("no audio device")
+                .unwrap_or_exit(69);
+            let sink = Sink::new(&device);
+
+            let source = lilac.source();
+            let duration = source.total_duration().unwrap();
+
+            sink.set_volume(volume);
+            sink.append(source);
+            sink.play();
+
+            thread::sleep(duration);
         }
         Opt::Transcode { input, output } => match input.extension().map(|e| e.to_str().unwrap()) {
             Some("lilac") => {
