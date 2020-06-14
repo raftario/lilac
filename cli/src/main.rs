@@ -59,6 +59,15 @@ fn main() {
                 let lilac = Lilac::read_file(input).unwrap_or_exit(65);
                 lilac.to_wav_file(output).unwrap_or_exit(70);
             }
+            Some("mp3") => {
+                println!(
+                    "Transcoding MP3 file `{}` to LILAC file `{}`",
+                    input.display(),
+                    output.display(),
+                );
+                let lilac = Lilac::from_mp3_file(input).unwrap_or_exit(65);
+                lilac.write_file(output).unwrap_or_exit(70);
+            }
             Some("flac") => {
                 println!(
                     "Transcoding FLAC file `{}` to LILAC file `{}`",
