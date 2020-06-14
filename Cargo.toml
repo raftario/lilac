@@ -1,0 +1,27 @@
+[package]
+name = "lilac"
+version = "0.1.0"
+authors = ["Raphaël Thériault <raphael_theriault@outlook.com>"]
+edition = "2018"
+description = "The greatest audio codec of all"
+license = "MIT"
+
+[dependencies]
+claxon = { version = "0.4", optional = true }
+hound = { version = "3", optional = true }
+lewton = { version = "0.10", optional = true }
+rodio = { version = "0.11", default-features = false, optional = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+
+[features]
+default = ["playback"]
+playback = ["rodio"]
+conversion = ["flac", "ogg", "wav"]
+flac = ["claxon"]
+ogg = ["lewton"]
+wav = ["hound"]
+
+[workspace]
+members = ["cli"]

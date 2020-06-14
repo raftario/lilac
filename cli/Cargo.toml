@@ -1,0 +1,11 @@
+[package]
+name = "lilac-cli"
+version = "0.1.0"
+authors = ["Raphaël Thériault <raphael_theriault@outlook.com>"]
+edition = "2018"
+description = "LILAC playback and transcoding utility"
+license = "MIT"
+
+[dependencies]
+lilac = { path = "..", features = ["playback", "conversion"] }
+structopt = "0.3"

@@ -1,0 +1,10 @@
+/target/
+Cargo.lock
+
+.vscode/
+.idea/
+
+*.lilac
+*.flac
+*.ogg
+*.wav
