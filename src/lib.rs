@@ -53,7 +53,7 @@ impl Lilac {
     }
 
     pub fn write<W: Write>(&self, writer: W) -> Result<(), Error> {
-        serde_json::to_writer(writer, self).map_err(Into::into)
+        serde_json::to_writer_pretty(writer, self).map_err(Into::into)
     }
     pub fn write_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Error> {
         self.write(BufWriter::new(File::create(path)?))
