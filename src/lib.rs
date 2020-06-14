@@ -16,6 +16,10 @@ pub enum Error {
     #[error("playback error: {0}")]
     Playback(&'static str),
 
+    #[cfg(feature = "mp3")]
+    #[error("mp3 error: {0}")]
+    Mp3(#[from] minimp3::Error),
+
     #[cfg(feature = "flac")]
     #[error("flac error: {0}")]
     Flac(#[from] claxon::Error),
@@ -146,6 +150,55 @@ mod playback {
         #[inline]
         fn total_duration(&self) -> Option<Duration> {
             Some(self.duration)
+        }
+    }
+}
+
+#[cfg(feature = "mp3")]
+mod mp3 {
+    use crate::{Error, Lilac};
+    use minimp3::Decoder;
+    use std::{
+        fs::File,
+        io::{BufReader, Read},
+        path::Path,
+    };
+
+    impl Lilac {
+        pub fn from_mp3<R: Read>(reader: R) -> Result<Self, Error> {
+            let mut reader = Decoder::new(reader);
+            let mut samples = Vec::new();
+
+            let first_frame = reader.next_frame()?;
+            let channels = first_frame.channels as u16;
+            let sample_rate = first_frame.sample_rate as u32;
+            samples.extend(first_frame.data.into_iter().map(|s| s as i32));
+
+            loop {
+                match reader.next_frame() {
+                    Ok(f) => samples.extend(f.data.into_iter().map(|s| s as i32)),
+                    Err(e) => match e {
+                        minimp3::Error::Eof => break,
+                        _ => return Err(e.into()),
+                    },
+                }
+            }
+
+            Ok(Lilac {
+                title: None,
+                artist: None,
+                year: None,
+                album: None,
+                track: None,
+                channels,
+                sample_rate,
+                bit_depth: 16,
+                samples,
+            })
+        }
+
+        pub fn from_mp3_file<P: AsRef<Path>>(path: P) -> Result<Self, Error> {
+            Self::from_mp3(BufReader::new(File::open(path)?))
         }
     }
 }
