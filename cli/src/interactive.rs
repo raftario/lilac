@@ -390,7 +390,7 @@ fn draw_playback<T: Backend>(f: &mut Frame<T>, s: &PlaybackState, area: Rect) {
         .direction(Direction::Horizontal)
         .constraints(
             [
-                Constraint::Length(5),
+                Constraint::Length(6),
                 Constraint::Min(1),
                 Constraint::Length(6),
             ]
@@ -400,7 +400,7 @@ fn draw_playback<T: Backend>(f: &mut Frame<T>, s: &PlaybackState, area: Rect) {
         .split(area);
 
     let play_pause_text = [widgets::Text::styled(
-        if s.playing { "PLAY" } else { "PAUSE" },
+        if s.playing { "PLAY  " } else { "PAUSE " },
         BOLD,
     )];
     let play_pause = widgets::Paragraph::new(play_pause_text.iter()).wrap(false);
@@ -466,7 +466,7 @@ fn draw_metadata<T: Backend>(f: &mut Frame<T>, s: &MetadataState, area: Rect) {
             s.sample_rate,
         )),
     ];
-    f.render_widget(widgets::Paragraph::new(text.iter()), area);
+    f.render_widget(widgets::Paragraph::new(text.iter()).wrap(true), area);
 }
 
 fn draw_queue<T: Backend>(f: &mut Frame<T>, s: &QueueState, area: Rect) {
