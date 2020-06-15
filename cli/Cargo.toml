@@ -7,6 +7,9 @@ description = "LILAC playback and transcoding utility"
 license = "MIT"
 
 [dependencies]
+anyhow = "1"
+console = "0.11"
 lilac = { path = "..", features = ["playback", "conversion"] }
+rayon = "1"
 rodio = { version = "0.11", default-features = false }
 structopt = "0.3"
