@@ -8,8 +8,9 @@ license = "MIT"
 
 [dependencies]
 anyhow = "1"
-console = "0.11"
+crossterm = "0.17"
 lilac = { path = "..", features = ["playback", "conversion"] }
 rayon = "1"
 rodio = { version = "0.11", default-features = false }
 structopt = "0.3"
+tui = { version = "0.9", features = ["crossterm"], default-features = false }

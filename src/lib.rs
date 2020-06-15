@@ -7,9 +7,9 @@ use std::{
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error(transparent)]
+    #[error("io error: {0}")]
     IO(#[from] std::io::Error),
-    #[error(transparent)]
+    #[error("json error: {0}")]
     Json(#[from] serde_json::Error),
 
     #[cfg(feature = "playback")]
@@ -42,9 +42,9 @@ pub struct Lilac {
     pub album: Option<String>,
     pub track: Option<u32>,
 
-    channels: u16,
-    sample_rate: u32,
-    bit_depth: u32,
+    pub channels: u16,
+    pub sample_rate: u32,
+    pub bit_depth: u32,
 
     samples: Vec<i32>,
 }
