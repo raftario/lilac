@@ -12,7 +12,8 @@ mod transcode;
 
 /// LILAC playback and transcoding utility
 ///
-/// If neither of the subcommands is detected, opens an interactive player and load the procided files
+/// If neither of the subcommands are detected,
+/// opens an interactive player and load the procided files.
 #[derive(StructOpt)]
 enum Opt {
     /// Plays a LILAC file
@@ -28,7 +29,8 @@ enum Opt {
     },
     /// Transcodes a file to or from LILAC
     ///
-    /// Supports transcoding from MP3, FLAC, OGG and WAV, and transcoding to WAV
+    /// Supports transcoding from MP3, FLAC,
+    /// OGG and WAV, and transcoding to WAV.
     /// Input and output formats are automatically inferred
     Transcode {
         /// Glob matching the input files
@@ -36,12 +38,12 @@ enum Opt {
         glob: String,
         /// Output files naming pattern
         ///
-        /// %F - input filename without extension
-        /// %E - output format extension
-        /// %e - input format extension
-        /// %T - song title
-        /// %A - song artist
-        /// %a - song album
+        /// %F is replaced with the input filename without extension,
+        /// %E with the output format extension,
+        /// %e with the input format extension,
+        /// %T with the song title,
+        /// %A with the song artist,
+        /// %a with the song album.
         #[structopt(name = "PATTERN", default_value = "%F.%E")]
         output: String,
     },
