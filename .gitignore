@@ -5,6 +5,7 @@ Cargo.lock
 .idea/
 
 *.lilac
+*.mp3
 *.flac
 *.ogg
 *.wav
