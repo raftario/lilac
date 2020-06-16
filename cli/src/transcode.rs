@@ -13,10 +13,10 @@ static OGG_MAGIC_NUMBER: &[u8] = b"OggS";
 static WAV_MAGIC_NUMBER: &[u8] = b"WAVE";
 const WAV_MAGIC_NUMBER_OFFSET: usize = 8;
 
-pub fn main(glob: String, output: String) -> crate::Result {
+pub fn main(glob: String, output: String, keep: bool) -> crate::Result {
     let files = glob::glob(&glob)?;
     let results: Vec<anyhow::Result<(PathBuf, PathBuf)>> =
-        files.par_bridge().map(|r| transcode(r?, &output)).collect();
+        files.par_bridge().map(|r| transcode(r?, &output, keep)).collect();
     for r in results {
         match r {
             Ok((i, o)) => println!("`{}` -> `{}`", i.display(), o.display()),
@@ -35,7 +35,7 @@ enum Format {
     Wav,
 }
 
-fn transcode(filename: PathBuf, output: &str) -> anyhow::Result<(PathBuf, PathBuf)> {
+fn transcode(filename: PathBuf, output: &str, keep: bool) -> anyhow::Result<(PathBuf, PathBuf)> {
     let reader = BufReader::new(File::open(&filename)?);
 
     let (lilac, format) = match filename
@@ -94,6 +94,10 @@ fn transcode(filename: PathBuf, output: &str) -> anyhow::Result<(PathBuf, PathBu
     match format {
         Format::Lilac => lilac.to_wav_file(&outfile)?,
         _ => lilac.write_file(&outfile)?,
+    }
+
+    if keep == false {
+        fs::remove_file(&filename)?;
     }
     Ok((filename, outfile))
 }

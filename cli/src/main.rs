@@ -46,6 +46,10 @@ enum Opt {
         /// %a with the song album.
         #[structopt(name = "PATTERN", default_value = "%F.%E")]
         output: String,
+        /// Keep input files after transcoding
+        #[structopt(short, long, name = "KEEP")]
+        keep: bool,
+
     },
 
     #[structopt(external_subcommand)]
@@ -55,7 +59,7 @@ enum Opt {
 fn main() {
     if let Err(e) = match Opt::from_args() {
         Opt::Play { file, volume } => play(file, volume),
-        Opt::Transcode { glob, output } => transcode::main(glob, output),
+        Opt::Transcode { glob, output, keep } => transcode::main(glob, output, keep),
         Opt::Interactive(queue) => interactive::main(queue),
     } {
         eprintln!("{:#}", e);
