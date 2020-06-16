@@ -47,7 +47,7 @@ enum Opt {
         #[structopt(name = "PATTERN", default_value = "%F.%E")]
         output: String,
         /// Keep input files after transcoding
-        #[structopt(short, long, name = "KEEP")]
+        #[structopt(short, long)]
         keep: bool,
     },
 

@@ -98,7 +98,7 @@ fn transcode(filename: PathBuf, output: &str, keep: bool) -> anyhow::Result<(Pat
         _ => lilac.write_file(&outfile)?,
     }
 
-    if keep == false {
+    if !keep {
         fs::remove_file(&filename)?;
     }
     Ok((filename, outfile))
