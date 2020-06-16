@@ -71,7 +71,7 @@ impl Queue {
     fn files(&self) -> Vec<&str> {
         self.songs
             .iter()
-            .map(|(_, p)| p.to_str().unwrap())
+            .map(|(_, p)| p.file_stem().unwrap().to_str().unwrap())
             .collect()
     }
 
