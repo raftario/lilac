@@ -13,7 +13,7 @@ mod transcode;
 /// LILAC playback and transcoding utility
 ///
 /// If neither of the subcommands are detected,
-/// opens an interactive player and load the procided files.
+/// opens an interactive player and load the provided files.
 #[derive(StructOpt)]
 enum Opt {
     /// Plays a LILAC file
