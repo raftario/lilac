@@ -57,9 +57,6 @@ impl Queue {
             cursor: 0,
         })
     }
-    fn len(&self) -> usize {
-        self.songs.len()
-    }
     fn is_empty(&self) -> bool {
         self.songs.is_empty()
     }
@@ -79,7 +76,7 @@ impl Queue {
     }
 
     fn next(&mut self) -> bool {
-        if self.cursor == self.len() - 1 {
+        if self.cursor == self.songs.len() - 1 {
             return false;
         }
 

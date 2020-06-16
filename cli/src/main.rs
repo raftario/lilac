@@ -10,8 +10,10 @@ const OK: Result = Result::Ok(());
 mod interactive;
 mod transcode;
 
+/// LILAC playback and transcoding utility
+///
+/// If neither of the subcommands is detected, opens an interactive player and load the procided files
 #[derive(StructOpt)]
-#[structopt(about)]
 enum Opt {
     /// Plays a LILAC file
     Play {
@@ -19,17 +21,29 @@ enum Opt {
         #[structopt(name = "FILE")]
         file: PathBuf,
         /// Playback volume
+        ///
+        /// Should be anywhere between 0.0 and 1.0 inclusively
         #[structopt(short, long, name = "VOLUME", default_value = "1.0")]
         volume: f32,
     },
     /// Transcodes a file to or from LILAC
+    ///
+    /// Supports transcoding from MP3, FLAC, OGG and WAV, and transcoding to WAV
+    /// Input and output formats are automatically inferred
     Transcode {
-        /// Input file
-        #[structopt(name = "INPUT")]
-        input: PathBuf,
-        /// Output file
-        #[structopt(name = "OUTPUT")]
-        output: PathBuf,
+        /// Glob matching the input files
+        #[structopt(name = "GLOB")]
+        glob: String,
+        /// Output files naming pattern
+        ///
+        /// %F - input filename without extension
+        /// %E - output format extension
+        /// %e - input format extension
+        /// %T - song title
+        /// %A - song artist
+        /// %a - song album
+        #[structopt(name = "PATTERN", default_value = "%F.%E")]
+        output: String,
     },
 
     #[structopt(external_subcommand)]
@@ -39,7 +53,7 @@ enum Opt {
 fn main() {
     if let Err(e) = match Opt::from_args() {
         Opt::Play { file, volume } => play(file, volume),
-        Opt::Transcode { input, output } => transcode::main(input, output),
+        Opt::Transcode { glob, output } => transcode::main(glob, output),
         Opt::Interactive(queue) => interactive::main(queue),
     } {
         eprintln!("{:#}", e);
