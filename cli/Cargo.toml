@@ -10,7 +10,7 @@ license = "MIT"
 anyhow = "1"
 crossterm = "0.17"
 glob = "0.3"
-lilac = { path = "..", features = ["playback", "conversion"] }
+lilac = { path = "..", features = ["conversion"] }
 rayon = "1"
 rodio = { version = "0.11", default-features = false }
 structopt = "0.3"

@@ -1,8 +1,11 @@
+use rodio::Source;
 use serde::{Deserialize, Serialize};
 use std::{
+    cmp::Ordering,
     fs::File,
     io::{BufReader, BufWriter, Read, Write},
     path::Path,
+    time::Duration,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -12,13 +15,12 @@ pub enum Error {
     #[error("json error: {0}")]
     Json(#[from] serde_json::Error),
 
-    #[cfg(feature = "playback")]
-    #[error("playback error: {0}")]
-    Playback(&'static str),
-
     #[cfg(feature = "mp3")]
     #[error("mp3 error: {0}")]
     Mp3(#[from] minimp3::Error),
+    #[cfg(feature = "mp3")]
+    #[error("id3 error: {0}")]
+    Id3(#[from] id3::Error),
 
     #[cfg(feature = "flac")]
     #[error("flac error: {0}")]
@@ -72,100 +74,94 @@ impl Lilac {
     pub fn album(&self) -> &str {
         self.album.as_ref().map(AsRef::as_ref).unwrap_or("Unknown")
     }
+
+    pub fn source(self) -> impl Source<Item = f32> {
+        let min = (2u32.pow(self.bit_depth - 1)) as f32;
+        let max = (2u32.pow(self.bit_depth - 1) - 1) as f32;
+
+        let samples_len = self.samples.len();
+
+        LilacSource {
+            channels: self.channels,
+            sample_rate: self.sample_rate,
+
+            samples: self.samples.into_iter().map(move |s| match s.cmp(&0) {
+                Ordering::Less => (s as f32 / min),
+                Ordering::Equal => 0.0,
+                Ordering::Greater => (s as f32 / max),
+            }),
+
+            duration: Duration::from_millis(
+                samples_len as u64 / self.channels as u64 / (self.sample_rate / 1000) as u64,
+            ),
+        }
+    }
 }
 
-#[cfg(feature = "playback")]
-mod playback {
-    use crate::{Error, Lilac};
-    use rodio::{source::Source, Device};
-    use std::{cmp::Ordering, thread, time::Duration};
+struct LilacSource<T: Iterator<Item = f32>> {
+    channels: u16,
+    sample_rate: u32,
 
-    impl Lilac {
-        pub fn source(self) -> impl Source<Item = f32> {
-            let min = (2u32.pow(self.bit_depth - 1)) as f32;
-            let max = (2u32.pow(self.bit_depth - 1) - 1) as f32;
+    samples: T,
 
-            let samples_len = self.samples.len();
+    duration: Duration,
+}
+impl<T: Iterator<Item = f32>> Iterator for LilacSource<T> {
+    type Item = f32;
 
-            LilacSource {
-                channels: self.channels,
-                sample_rate: self.sample_rate,
-
-                samples: self.samples.into_iter().map(move |s| match s.cmp(&0) {
-                    Ordering::Less => (s as f32 / min),
-                    Ordering::Equal => 0.0,
-                    Ordering::Greater => (s as f32 / max),
-                }),
-
-                duration: Duration::from_millis(
-                    samples_len as u64 / self.channels as u64 / (self.sample_rate / 1000) as u64,
-                ),
-            }
-        }
-
-        pub fn play(self) -> Result<(), Error> {
-            let device = rodio::default_output_device().ok_or(Error::Playback(
-                "couldn't detect default audio playback device",
-            ))?;
-            self.play_on(&device);
-            Ok(())
-        }
-        pub fn play_on(self, device: &Device) {
-            let source = self.source();
-            let duration = source.total_duration().unwrap();
-            rodio::play_raw(device, source);
-            thread::sleep(duration);
-        }
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.samples.next()
     }
-
-    struct LilacSource<T: Iterator<Item = f32>> {
-        channels: u16,
-        sample_rate: u32,
-
-        samples: T,
-
-        duration: Duration,
+}
+impl<T: Iterator<Item = f32>> Source for LilacSource<T> {
+    #[inline]
+    fn current_frame_len(&self) -> Option<usize> {
+        None
     }
-    impl<T: Iterator<Item = f32>> Iterator for LilacSource<T> {
-        type Item = f32;
-
-        #[inline]
-        fn next(&mut self) -> Option<Self::Item> {
-            self.samples.next()
-        }
+    #[inline]
+    fn channels(&self) -> u16 {
+        self.channels
     }
-    impl<T: Iterator<Item = f32>> Source for LilacSource<T> {
-        #[inline]
-        fn current_frame_len(&self) -> Option<usize> {
-            None
-        }
-        #[inline]
-        fn channels(&self) -> u16 {
-            self.channels
-        }
-        #[inline]
-        fn sample_rate(&self) -> u32 {
-            self.sample_rate
-        }
-        #[inline]
-        fn total_duration(&self) -> Option<Duration> {
-            Some(self.duration)
-        }
+    #[inline]
+    fn sample_rate(&self) -> u32 {
+        self.sample_rate
+    }
+    #[inline]
+    fn total_duration(&self) -> Option<Duration> {
+        Some(self.duration)
     }
 }
 
 #[cfg(feature = "mp3")]
 mod mp3 {
     use crate::{Error, Lilac};
+    use id3::{ErrorKind, Tag};
     use minimp3::Decoder;
     use std::{
         fs::File,
-        io::{BufReader, Read},
+        io::{BufReader, Read, Seek, SeekFrom},
         path::Path,
     };
 
     impl Lilac {
-        pub fn from_mp3<R: Read>(reader: R) -> Result<Self, Error> {
+        pub fn from_mp3<R: Read + Seek>(mut reader: R) -> Result<Self, Error> {
+            let (title, artist, year, album, track) = match Tag::read_from(&mut reader) {
+                Ok(tag) => {
+                    let title = tag.title().map(ToOwned::to_owned);
+                    let artist = tag.artist().map(ToOwned::to_owned);
+                    let year = tag.year();
+                    let album = tag.album().map(ToOwned::to_owned);
+                    let track = tag.track();
+                    (title, artist, year, album, track)
+                }
+                Err(e) => match e.kind {
+                    ErrorKind::NoTag => (None, None, None, None, None),
+                    _ => return Err(e.into()),
+                },
+            };
+
+            reader.seek(SeekFrom::Start(0))?;
             let mut reader = Decoder::new(reader);
             let mut samples = Vec::new();
 
@@ -185,11 +181,11 @@ mod mp3 {
             }
 
             Ok(Lilac {
-                title: None,
-                artist: None,
-                year: None,
-                album: None,
-                track: None,
+                title,
+                artist,
+                year,
+                album,
+                track,
                 channels,
                 sample_rate,
                 bit_depth: 16,

@@ -9,18 +9,18 @@ license = "MIT"
 [dependencies]
 claxon = { version = "0.4", optional = true }
 hound = { version = "3", optional = true }
+id3 = { version = "0.5", optional = true }
 lewton = { version = "0.10", optional = true }
 minimp3 = { version = "0.3", optional = true }
-rodio = { version = "0.11", default-features = false, optional = true }
+rodio = { version = "0.11", default-features = false }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "1"
 
 [features]
-default = ["playback"]
-playback = ["rodio"]
+default = []
 conversion = ["mp3", "flac", "ogg", "wav"]
-mp3 = ["minimp3"]
+mp3 = ["id3", "minimp3"]
 flac = ["claxon"]
 ogg = ["lewton"]
 wav = ["hound"]
