@@ -15,8 +15,10 @@ const WAV_MAGIC_NUMBER_OFFSET: usize = 8;
 
 pub fn main(glob: String, output: String, keep: bool) -> crate::Result {
     let files = glob::glob(&glob)?;
-    let results: Vec<anyhow::Result<(PathBuf, PathBuf)>> =
-        files.par_bridge().map(|r| transcode(r?, &output, keep)).collect();
+    let results: Vec<anyhow::Result<(PathBuf, PathBuf)>> = files
+        .par_bridge()
+        .map(|r| transcode(r?, &output, keep))
+        .collect();
     for r in results {
         match r {
             Ok((i, o)) => println!("`{}` -> `{}`", i.display(), o.display()),

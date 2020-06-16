@@ -49,7 +49,6 @@ enum Opt {
         /// Keep input files after transcoding
         #[structopt(short, long, name = "KEEP")]
         keep: bool,
-
     },
 
     #[structopt(external_subcommand)]
